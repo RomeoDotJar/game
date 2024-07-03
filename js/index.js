@@ -115,7 +115,7 @@ app.stage.ontouchcancel = (event) => {
 const borderWidth = 10;
 const cornerRadius = 10;
 const cellGap = 0;
-const cellBorderWidth = 4;
+const cellBorderWidth = 2;
 
 var graph = new PIXI.Graphics();
 app.stage.addChild(graph);
@@ -206,7 +206,7 @@ function drawGrid() {
                     text: cell.power,
                     style: {
                         fontFamily: ['sans-serif'],
-                        fontSize: 30,
+                        fontSize: Math.min(w(1)/20,h(1)/30),
                         align: 'center',
                     }
                 })
@@ -465,7 +465,7 @@ app.ticker.add((ticker) => {
         }
 
         //timerD/=1.004;
-        timer+=timerD;
+        timer=Math.min(timerD, timer+timerD*2);
 
         ballsIn+=1;
 
