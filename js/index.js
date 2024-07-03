@@ -46,6 +46,8 @@ function updSizes() {
 
     ballX = midX;
     ballY = origY+unit*hg-unit*.5;
+    
+    ballR = unit/6;
 }
 
 const cellFont = await PIXI.Assets.load('fnt/ss.fnt');
@@ -167,7 +169,6 @@ function initAll() {
     timer=1;
     ballsOut = [];// {}
 
-    ballR = 10;
     ballSpd = 12;
 
     toBeLaunched = [0,0,0];
@@ -500,7 +501,7 @@ app.ticker.add((ticker) => {
             }   
             grid[0]=r;
         } while(isEmpty());
-        
+
         drawGrid();
     }
     drawBalls();
