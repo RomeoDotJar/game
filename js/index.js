@@ -206,7 +206,7 @@ function drawGrid() {
                     text: cell.power,
                     style: {
                         fontFamily: ['sans-serif'],
-                        fontSize: Math.min(w(1)/20,h(1)/30),
+                        fontSize: Math.min(w(1)/17,h(1)/30),
                         align: 'center',
                     }
                 })
@@ -409,6 +409,20 @@ function ballCheck(ball) {
     }
 }
 
+function isEmpty() {
+    let empty = true;
+    for (let r=0;r<grid.length;r++) {
+        if(!empty)break;
+        for (let c=0;c<grid.at(r).length;c++) {
+            if (grid.at(r).at(c).power>0) {
+                empty=false;
+                break;
+            }
+        }
+    }
+    return empty;
+}
+
 app.ticker.add((ticker) => {
     let d = ticker.deltaTime
     elapsed += d/60;
@@ -469,22 +483,24 @@ app.ticker.add((ticker) => {
 
         ballsIn+=1;
 
-        for (let r=grid.length-1; r>0;r--) {
-            grid[r]=grid[r-1];
-        }
-        let r = []
-        for(let c=0;c<grid.at(0).length;c++) {
-            let cell = {
-                power: 0,
-                type: 0
-            };
-            if (Math.floor(Math.random()*(4+difficulty/90)-2)>0) {
-                cell.power = Math.ceil(Math.random()*(difficulty/10+1)+difficulty/5)
+        do {
+            for (let r=grid.length-1; r>0;r--) {
+                grid[r]=grid[r-1];
             }
-            r.push(cell)
-        }
-        grid[0]=r;
-        console.log(timerD+" "+r);
+            let r = [];
+            for(let c=0;c<grid.at(0).length;c++) {
+                let cell = {
+                    power: 0,
+                    type: 0
+                };
+                if (Math.floor(Math.random()*(4+difficulty/90)-2)>0) {
+                    cell.power = Math.ceil(Math.random()*(difficulty/10+1)+difficulty/5)
+                }
+                r.push(cell)
+            }   
+            grid[0]=r;
+        } while(isEmpty());
+        
         drawGrid();
     }
     drawBalls();
