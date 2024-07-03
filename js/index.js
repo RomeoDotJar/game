@@ -1,5 +1,8 @@
 //const PIXI = require('pixi.js')
 
+let version = 'version v'+1.01
+console.log(version);
+
 const app = new PIXI.Application()
 await app.init({
     resizeTo:window,
@@ -224,6 +227,30 @@ function initAll() {
 
 function drawGrid() {
     app.stage.getChildByLabel('cellTexts').removeChildren();
+
+    const vt0 = new PIXI.BitmapText({
+        text: version,
+        style: {
+            fontFamily: ['sans-serif'],
+            fontSize: Math.min(w(1)/17,h(1)/30),
+            align: 'left',
+        }
+    })
+    vt0.tint=0x000000;
+    vt0.x=13;
+    vt0.y=13;
+    app.stage.getChildByLabel('cellTexts').addChild(vt0);
+    const vt = new PIXI.BitmapText({
+        text: version,
+        style: {
+            fontFamily: ['sans-serif'],
+            fontSize: Math.min(w(1)/17,h(1)/30),
+            align: 'left',
+        }
+    })
+    vt.x=10;0
+    vt.y=10;
+    app.stage.getChildByLabel('cellTexts').addChild(vt);
 
     ball.anchor.set(.5,.5);
     ball.y=h(.5);
