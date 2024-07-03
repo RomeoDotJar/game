@@ -95,10 +95,21 @@ let aimVector = [0,0];
 
 app.stage.eventMode = 'static'
 app.stage.ontouchstart = (event) => {
-    aimVector = [event.x-midX, event.y-origY-unit*hg+unit*.5];
+    let y = event.y-origY-unit*hg+unit*.5;
+
+    aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
+    if (y<0) {
+        aimVector[0]*=-1;
+    }
 }
 app.stage.ontouchmove = (event) => {
-    aimVector = [event.x-midX, event.y-origY-unit*hg+unit*.5];
+    let y = event.y-origY-unit*hg+unit*.5;
+
+    aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
+    if (y<0) {
+        aimVector[0]*=-1;
+    }
+
     console.log(aimVector);
 }
 app.stage.ontouchend = (event) => {
@@ -109,6 +120,35 @@ app.stage.ontouchend = (event) => {
     aimVector = [0,0];
 }
 app.stage.ontouchcancel = (event) => {
+    aimVector = [0,0];
+}
+
+let md = false;
+app.stage.onmousedown = (event) => {
+    md=true;
+    let y = event.y-origY-unit*hg+unit*.5;
+
+    aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
+    if (y<0) {
+        aimVector[0]*=-1;
+    }
+}
+app.stage.onmousemove = (event) => {
+    if (md) {
+        let y = event.y-origY-unit*hg+unit*.5;
+
+        aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
+        if (y<0) {
+            aimVector[0]*=-1;
+        }
+    }
+}
+app.stage.onmouseup = (event) => {
+    md=false;
+    if (ballsIn>0) {
+        toBeLaunched = [-aimVector[0],-aimVector[1],ballsIn];
+        ballsIn=0;
+    }
     aimVector = [0,0];
 }
 
