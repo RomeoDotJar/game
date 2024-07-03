@@ -47,7 +47,7 @@ function updSizes() {
     ballX = midX;
     ballY = origY+unit*hg-unit*.5;
     
-    ballR = unit/8;
+    ballR = unit/7;
 }
 
 const cellFont = await PIXI.Assets.load('fnt/ss.fnt');
@@ -61,7 +61,7 @@ let elapsed = 0.0;
 
 let ballsIn = 1;
 
-let gridW = 6;
+let gridW = Math.floor(Math.random()*5)+5;
 let gridH = 10;
 
 let row = [];
