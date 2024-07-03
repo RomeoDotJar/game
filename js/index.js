@@ -8,7 +8,7 @@ await app.init({
     transparent: false,
     resolution: 1
 });
-console.log(document.body.getElementsByClassName('canvas'))
+//console.log(document.body.getElementsByClassName('canvas'))
 document.body.appendChild(app.canvas);
 
 function w(f) {
@@ -47,7 +47,7 @@ function updSizes() {
     ballX = midX;
     ballY = origY+unit*hg-unit*.5;
     
-    ballR = unit/6;
+    ballR = unit/8;
 }
 
 const cellFont = await PIXI.Assets.load('fnt/ss.fnt');
@@ -110,7 +110,7 @@ app.stage.ontouchmove = (event) => {
         aimVector[0]*=-1;
     }
 
-    console.log(aimVector);
+    //console.log(aimVector);
 }
 app.stage.ontouchend = (event) => {
     if (ballsIn>0) {
@@ -352,7 +352,7 @@ app.renderer.on('resize', (width, height) => {
 
 function ballCheck(ball) {
     if (ball.y>=origY+hg*unit) {
-        console.log('pop');
+        //console.log('pop');
         ballsIn++;
         ballsOut.splice(ballsOut.indexOf(ball), 1);
         return;
@@ -474,11 +474,11 @@ app.ticker.add((ticker) => {
     }
 
     if (ballsOut.length>0) {
-        console.log(ballsOut.at(0).xV+" "+ballsOut.at(0).yV)
+        //console.log(ballsOut.at(0).xV+" "+ballsOut.at(0).yV)
     }
 
     if (toBeLaunched.at(2)>0 && lastLaunchTime+cooldown<elapsed) {
-        console.log('bam');
+        //console.log('bam');
 
         let x = toBeLaunched.at(0);
         let y = toBeLaunched.at(1);
