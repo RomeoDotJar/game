@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v'+1.01
+let version = 'version v'+1.02
 console.log(version);
 
 const app = new PIXI.Application()
@@ -186,7 +186,7 @@ function initAll() {
 
     ballsIn = 1;
 
-    gridW = 6;
+    gridW = Math.floor(Math.random()*5)+5;
     gridH = 10;
 
     row = [];
