@@ -1,0 +1,5 @@
+div {
+    overflow-y: hidden;
+    overflow-x: hidden;
+    scrollbar-width: 0px;
+}
