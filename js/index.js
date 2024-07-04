@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v'+1.02
+let version = 'version v'+1.03
 console.log(version);
 
 const app = new PIXI.Application()
@@ -450,24 +450,32 @@ function ballCheck(ball) {
 
                     switch(max) {
                         case distYbot:
-                            if (ball.yV<0)
-                                ball.yV*=-1;
-                            ball.y=origY+unit*r+unit+ballR/2+cellBorderWidth*2;
+                            if (r+1>=grid.length || grid.at(r+1).at(c).power<=0) {
+                                if (ball.yV<0)
+                                    ball.yV*=-1;
+                                ball.y=origY+unit*r+unit+ballR/2+cellBorderWidth*2;
+                            }
                             break;
                         case distYtop:
-                            if (ball.yV>0)
-                                ball.yV*=-1;
-                            ball.y=origY+unit*r-ballR/2-cellBorderWidth*2;
+                            if (r-1<0 || grid.at(r-1).at(c).power<=0) {
+                                if (ball.yV>0)
+                                    ball.yV*=-1;
+                                ball.y=origY+unit*r-ballR/2-cellBorderWidth*2;
+                            }
                             break;
                         case distXleft:
-                            if (ball.xV>0)
-                                ball.xV*=-1;
-                            ball.x=origX+unit*c-ballR/2-cellBorderWidth*2;
+                            if (c-1<0 || grid.at(r).at(c-1).power<=0) {
+                                if (ball.xV>0)
+                                    ball.xV*=-1;
+                                ball.x=origX+unit*c-ballR/2-cellBorderWidth*2;
+                            }
                             break;
                         case distXright:
-                            if (ball.xV<0)
-                                ball.xV*=-1;
-                            ball.x=origX+unit*c+unit+ballR/2+cellBorderWidth*2;
+                            if (c+1>=grid.at(r).length || grid.at(r).at(c+1).power<=0) {
+                                if (ball.xV<0)
+                                    ball.xV*=-1;
+                                ball.x=origX+unit*c+unit+ballR/2+cellBorderWidth*2;
+                            }
                             break;
                     }
                     bounced=true;
