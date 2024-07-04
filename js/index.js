@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v1.06.1'
+let version = 'version v1.06.3'
 console.log(version);
 
 const app = new PIXI.Application()
@@ -416,12 +416,20 @@ function drawCells(d) {
                 switch (cell.type) {
                     case 'bombCol':
                         // vertical line with col1
+                        graph
+                          .rect(
+                            origX+cellBorderWidth+cellGap/2+unit*c+unit*.25, origY+cellBorderWidth+cellGap/2+unit*i, unit-cellGap-cellBorderWidth*2-unit*.5, unit-cellGap-cellBorderWidth*2)
+                          .fill(cellCol1);
                         break;
                     case 'bombRow':
+                        graph
+                          .rect(
+                            origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i+unit*.25, unit-cellGap-cellBorderWidth*2, unit-cellGap-cellBorderWidth*2-unit*.5)
+                          .fill(cellCol1);
                         // horizontal line with col1
                         break;
                     default:
-                        graphBalls
+                        graph
                           .poly([
                             new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i),
                             new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i),
@@ -429,7 +437,8 @@ function drawCells(d) {
                             ])
                           .fill(cellCol1);
                 }
-                graphBalls
+
+                graph
                   .rect(
                       origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i, unit-cellGap-cellBorderWidth*2, unit-cellGap-cellBorderWidth*2)
                   .fill(cellFlashCol,cell.flash);
