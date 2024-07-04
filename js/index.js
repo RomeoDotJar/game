@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v'+1.03
+let version = 'version v1.06.1'
 console.log(version);
 
 const app = new PIXI.Application()
@@ -21,6 +21,20 @@ function h(f) {
     return app.canvas.height*f
 }
 
+const fnts = ['Arial','Verdana','Tahoma','Trebuchet MS','Times New Roman','Georgia','Garamond','Courier New','Brush Script MT'];
+
+const cellTypes = [
+    {id:'basic',w:1000},
+    {id:'bombRow',w:50},
+    {id:'bombCol',w:50}
+]
+var cellFont = fnts.at(0);
+
+var attempts = 0;
+var hs = 0;
+var lastScore = 0;
+var score = 0;
+
 var wg = 0;
 var hg = 0;
 
@@ -34,6 +48,10 @@ var midX = 0;
 
 var ballX = 0;
 var ballY = 0;
+
+var ftsz=0;
+
+var ballSpdB=60;
 
 function updSizes() {
     wg = grid.at(0).length;
@@ -51,11 +69,13 @@ function updSizes() {
     ballY = origY+unit*hg-unit*.5;
     
     ballR = unit/7;
+
+    ballSpd = ballSpdB*unit;
+
+    ftsz = Math.min(w(1)/13,h(1)/27);
 }
 
-const cellFont = await PIXI.Assets.load('fnt/ss.fnt');
 await PIXI.Assets.load('img/ball.png');
-
 let ball = PIXI.Sprite.from('img/ball.png');
 
 app.stage.addChild(ball);
@@ -116,7 +136,7 @@ app.stage.ontouchmove = (event) => {
     //console.log(aimVector);
 }
 app.stage.ontouchend = (event) => {
-    if (ballsIn>0) {
+    if (ballsIn>0 && Math.abs(aimVector[0])+Math.abs(aimVector[1])>50) {
         toBeLaunched = [-aimVector[0],-aimVector[1],ballsIn];
         ballsIn=0;
     }
@@ -148,7 +168,7 @@ app.stage.onmousemove = (event) => {
 }
 app.stage.onmouseup = (event) => {
     md=false;
-    if (ballsIn>0) {
+    if (ballsIn>0 && Math.abs(aimVector[0])+Math.abs(aimVector[1])>50) {
         toBeLaunched = [-aimVector[0],-aimVector[1],ballsIn];
         ballsIn=0;
     }
@@ -172,16 +192,30 @@ var cellTexts = new PIXI.Container();
 cellTexts.label='cellTexts';
 app.stage.addChild(cellTexts);
 
+var guiTexts = new PIXI.Container();
+guiTexts.label='guiTexts';
+app.stage.addChild(guiTexts);
+
 var ballsC = new PIXI.Container();
 ballsC.label='balls';
 app.stage.addChild(ballsC);
 
-let lastLaunchTime = 0;
-let cooldown = 0.1;
+var lastLaunchTime = 0;
+var cooldown = 0.1;
 
-let maxDist = 300;
+var maxDist = 300;
+
+var round=0;
+var scoreTick=0;
+
+var scoreTScale=1;
 
 function initAll() {
+    attempts++;
+    lastScore=Math.floor(score);
+    hs=Math.max(hs,lastScore);
+    score = 0;
+    scoreTick=0;
     elapsed = 0.0;
 
     ballsIn = 1;
@@ -210,9 +244,10 @@ function initAll() {
 
     timerD=4;
     timer=1;
+    round=0;
     ballsOut = [];// {}
 
-    ballSpd = 12;
+    ballSpdB=12;
 
     toBeLaunched = [0,0,0];
     aimVector = [0,0];
@@ -222,42 +257,123 @@ function initAll() {
 
     maxDist = 300;
 
+    cellFont = fnts.at(Math.floor(Math.random()*(fnts.length)));
+
     drawGrid();
 }
 
-function drawGrid() {
-    app.stage.getChildByLabel('cellTexts').removeChildren();
+//const PIXI = require('pixi.js')
+
+function drawGui(d) {
+    app.stage.getChildByLabel('guiTexts').removeChildren();
+
+    if (elapsed<timerD*3) {
+        let a = Math.max(0, Math.min(1, 1.25-(elapsed/timerD/2)));
+        a=Math.sqrt(a);
+
+        const gt = new PIXI.BitmapText({
+            text: 'Run #'+attempts,
+            style: {
+                fontFamily: fnts.at(1),
+                fontSize: ftsz,
+                align: 'center',
+            }
+        });
+        gt.alpha=a;
+        gt.anchor.set(.5,.5);
+        gt.y=origY+unit*hg/2-ftsz*2;
+        gt.x=midX;
+        app.stage.getChildByLabel('guiTexts').addChild(gt);
+        const lst = new PIXI.BitmapText({
+            text: 'last score: '+lastScore,
+            style: {
+                fontFamily: fnts.at(1),
+                fontSize: ftsz,
+                align: 'left',
+            }
+        });
+        lst.alpha=a;
+        lst.anchor.set(0,.5);
+        lst.y=origY+unit*hg/2;
+        lst.x=origX+unit;
+        app.stage.getChildByLabel('guiTexts').addChild(lst);
+        const hst = new PIXI.BitmapText({
+            text: 'best score: '+hs,
+            style: {
+                fontFamily: fnts.at(1),
+                fontSize: ftsz,
+                align: 'left',
+            }
+        });
+        hst.alpha=a;
+        hst.anchor.set(0,.5);
+        hst.y=origY+unit*hg/2+ftsz*1.3;
+        hst.x=origX+unit;
+        app.stage.getChildByLabel('guiTexts').addChild(hst);
+    }
 
     const vt0 = new PIXI.BitmapText({
         text: version,
         style: {
-            fontFamily: ['sans-serif'],
-            fontSize: Math.min(w(1)/17,h(1)/30),
+            fontFamily: fnts.at(7),
+            fontSize: ftsz,
             align: 'left',
         }
-    })
+    });
     vt0.tint=0x000000;
-    vt0.x=13;
-    vt0.y=13;
-    app.stage.getChildByLabel('cellTexts').addChild(vt0);
+    vt0.x=10+ftsz/16;
+    vt0.y=h(1)-ftsz+ftsz/16;
+    app.stage.getChildByLabel('guiTexts').addChild(vt0);
     const vt = new PIXI.BitmapText({
         text: version,
         style: {
-            fontFamily: ['sans-serif'],
-            fontSize: Math.min(w(1)/17,h(1)/30),
+            fontFamily: fnts.at(7),
+            fontSize: ftsz,
             align: 'left',
         }
+    });
+    vt.x=10;
+    vt.y=h(1)-ftsz;
+    app.stage.getChildByLabel('guiTexts').addChild(vt);
+
+    let yOffset = Math.sin(scoreTick*.2+elapsed*2)*ftsz/11;
+    let xOffset = Math.cos(scoreTick*.2+elapsed)*ftsz/4;
+
+    let rOffset = Math.sin(scoreTick*.3+elapsed)/10;
+
+    const st0 = new PIXI.BitmapText({
+        text: 'счёт: '+Math.floor(score),
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
     })
-    vt.x=10;0
-    vt.y=10;
-    app.stage.getChildByLabel('cellTexts').addChild(vt);
+    st0.tint=0x000000;
+    st0.x=ballX+xOffset*1.2;
+    st0.y=origY-ftsz*1.2+ftsz/12+yOffset;
+    st0.rotation=rOffset;
+    st0.anchor.set(.5,.5);
+    app.stage.getChildByLabel('guiTexts').addChild(st0);
+    const st = new PIXI.BitmapText({
+        text: 'счёт: '+Math.floor(score),
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    st.x=ballX+xOffset;
+    st.y=origY-ftsz*1.2+yOffset;
+    st.rotation=rOffset;
+    st.anchor.set(.5,.5);
+    app.stage.getChildByLabel('guiTexts').addChild(st);
 
-    ball.anchor.set(.5,.5);
-    ball.y=h(.5);
-    ball.x=w(.3);
+    scoreTScale/=1.08;
+}
 
-    updSizes();
-    
+function drawCells(d) {
+    app.stage.getChildByLabel('cellTexts').removeChildren();
     graph
       .clear()
       .roundRect(origX-borderWidth, origY-borderWidth, wg*unit+borderWidth*2, hg*unit+borderWidth*2, cornerRadius)
@@ -270,43 +386,90 @@ function drawGrid() {
             let cell = grid.at(i).at(c);
 
             if (cell.power>0) {
-                const text = new PIXI.BitmapText({
-                    text: cell.power,
-                    style: {
-                        fontFamily: ['sans-serif'],
-                        fontSize: Math.min(w(1)/17,h(1)/30),
-                        align: 'center',
-                    }
-                })
-                text.groupColor=0xFFFFFF;
-                text.anchor.set(.5,.5);
-                text.x=origX+unit/2+unit*c;
-                text.y=origY+unit/2+unit*i;
-                app.stage.getChildByLabel('cellTexts').addChild(text);
+                let cellBorderCol=0xFFFFFF;
+                let cellTextCol=0xFFFFFF;
+                let cellFlashCol=0xFFFFFF;
+                let cellCol0=0x000000;
+                let cellCol1=0x000000;
+
+                switch (cell.type) {
+                    case 'basic':
+                        cellCol0=0x000011;
+                        cellCol1=0x131320;
+                        break;
+                    case 'bombCol':
+                    case 'bombRow':
+                        cellCol0=0x000011;
+                        cellCol1=0xAA2255;
+                        cellFlashCol=0xFF2255;
+                        break;
+                }
 
                 graph
                   .rect(
                       origX-cellBorderWidth+unit*c, origY-cellBorderWidth+unit*i, unit+cellBorderWidth*2, unit+cellBorderWidth*2)
-                  .fill(0xffffff)
+                  .fill(cellBorderCol)
                   .rect(
                       origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i, unit-cellGap-cellBorderWidth*2, unit-cellGap-cellBorderWidth*2)
-                  .fill(0x000000)
-                  .poly([
-                    new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i),
-                    new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i),
-                    new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i)
-                    ])
-                  .fill(0x131320);
+                  .fill(cellCol0);
+                
+                switch (cell.type) {
+                    case 'bombCol':
+                        // vertical line with col1
+                        break;
+                    case 'bombRow':
+                        // horizontal line with col1
+                        break;
+                    default:
+                        graphBalls
+                          .poly([
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i)
+                            ])
+                          .fill(cellCol1);
+                }
+                graphBalls
+                  .rect(
+                      origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i, unit-cellGap-cellBorderWidth*2, unit-cellGap-cellBorderWidth*2)
+                  .fill(cellFlashCol,cell.flash);
+                
+                
+                const text = new PIXI.BitmapText({
+                    text: cell.power,
+                    style: {
+                        fontFamily: cellFont,
+                        fontSize: ftsz,
+                        align: 'center',
+                    }
+                })
+                text.groupColor=cellTextCol;
+                text.anchor.set(.5,.5);
+                text.x=origX+unit/2+unit*c;
+                text.y=origY+unit/2+unit*i;
+                app.stage.getChildByLabel('cellTexts').addChild(text);
+            }
+            if (cell.flash>0) {
+                cell.flash=Math.max(0, cell.flash-d*2.6);
             }
         }
     }
+}
+
+function drawGrid() {
+
+    ball.anchor.set(.5,.5);
+    ball.y=h(.5);
+    ball.x=w(.3);
+
+    updSizes();
 }
 drawGrid();
 
 let deltaX0=0;
 let deltaY0=0;
 let smoothing=3;
-function drawBalls() {
+function drawBalls(d) {
     app.stage.getChildByLabel('balls').removeChildren();
 
     graphBalls.clear();
@@ -336,7 +499,7 @@ function drawBalls() {
             let usedDist = Math.min(maxDist,dist);
 
             graphBalls
-              .circle(ballX+dX, ballY+dY, 3+4.5*(1-dist0/usedDist))
+              .circle(ballX+dX, ballY+dY, (3+4.5*(1-dist0/usedDist))*ballR/10)
               .fill(0xFFFFFF, Math.max(0, 1-dist0/usedDist));
         }
         graphBalls
@@ -376,6 +539,47 @@ window.onresize = (event) => {
 app.renderer.on('resize', (width, height) => {
     drawGrid();
 })
+
+function addScore(pts) {
+    score+=pts;
+    scoreTick+=pts;
+    scoreTScale+=.05*Math.min(pts, 5);
+}
+
+function hit(ball, cell, dmg) {
+    cell.power-=dmg;
+    cell.flash=Math.min(1, cell.flash+dmg*.2);
+    if (cell.power<=0) {
+        switch (cell.type) {
+            case 'basic':
+                addScore(1);
+                break;
+            case 'bombCol':
+                for (let r=0;r<grid.length;r++) {
+                    if (r!=cell.r) {
+                        let cell0 = grid.at(r).at(cell.c);
+                        if (cell0.power>0) {
+                            let atk = Math.min(cell0.power-1, Math.ceil(cell0.power*.6)+1);
+                            hit(null, cell0, atk);
+                        }
+                    }
+                }
+                break;
+            case 'bombRow':
+                for (let c=0;c<grid.at(cell.r).length;c++) {
+                    if (c!=cell.c) {
+                        let cell0 = grid.at(cell.r).at(c);
+                        if (cell0.power>0) {
+                            let atk = Math.min(cell0.power-1, Math.ceil(cell0.power*.6)+1);
+                            hit(null, cell0, atk);
+                        }
+                    }
+                }
+                break;
+        }
+    }
+    addScore(1);
+}
 
 function ballCheck(ball) {
     if (ball.y>=origY+hg*unit) {
@@ -428,7 +632,7 @@ function ballCheck(ball) {
                 }
                 
                 if (col) {
-                    cell.power-=1;
+                    hit(ball, cell, 1);
                     drawGrid();
 
                     distYbot = Math.abs(distYbot);
@@ -500,12 +704,12 @@ function isEmpty() {
 }
 
 app.ticker.add((ticker) => {
-    let d = ticker.deltaTime
-    elapsed += d/60;
+    let d = ticker.deltaTime/60;
+    elapsed += d;
     let difficulty=elapsed;
 
     if (true) {
-        timer-=d/60;
+        timer-=d;
     }
 
     if (ballsOut.length>0) {
@@ -555,31 +759,54 @@ app.ticker.add((ticker) => {
         }
 
         //timerD/=1.004;
-        timer=Math.min(timerD, timer+timerD*2);
+        timer=Math.min(timerD, Math.max(-timerD*6, timer+timerD*2));
+        round++;
+
+        addScore(Math.floor(Math.sqrt(round)));
 
         ballsIn+=1;
 
         do {
             for (let r=grid.length-1; r>0;r--) {
                 grid[r]=grid[r-1];
+                for (let c=0;c<grid.at(r).length;c++)
+                    grid.at(r).at(c).r+=1;
             }
             let r = [];
             for(let c=0;c<grid.at(0).length;c++) {
                 let cell = {
                     power: 0,
-                    type: 0
+                    type: '',
+                    c: c,
+                    r: 0,
+                    flash: 0
                 };
                 if (Math.floor(Math.random()*(4+difficulty/90)-2)>0) {
-                    cell.power = Math.ceil(Math.random()*(difficulty/10+1)+difficulty/5)
+                    cell.power = Math.ceil(Math.random()*(difficulty/10+1)+difficulty/5);
+
+                    let maxW = 0;
+                    for (let i=0;i<cellTypes.length;i++) maxW+=cellTypes.at(i).w;
+
+                    let roll = Math.floor(Math.random()*maxW);
+                    let margin = 0;
+                    for (let i=0;i<cellTypes.length;i++) {
+                        margin+=cellTypes.at(i).w;
+                        if (roll<margin) {
+                            cell.type=cellTypes.at(i).id;
+                            break;
+                        }
+                    }
                 }
-                r.push(cell)
+                r.push(cell);
             }   
             grid[0]=r;
         } while(isEmpty());
 
         drawGrid();
     }
-    drawBalls();
+    drawCells(d);
+    drawBalls(d);
+    drawGui(d);
 });
 
 initAll();
