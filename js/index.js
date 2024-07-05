@@ -1,13 +1,13 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v1.06.3'
+let version = 'version v1.06.4'
 console.log(version);
 
 const app = new PIXI.Application()
 await app.init({
     resizeTo:window,
     backgroundAlpha:0,
-    antialias: true,
+    antialias: false,
     transparent: false,
     resolution: 1
 });
@@ -25,8 +25,8 @@ const fnts = ['Arial','Verdana','Tahoma','Trebuchet MS','Times New Roman','Georg
 
 const cellTypes = [
     {id:'basic',w:1000},
-    {id:'bombRow',w:50},
-    {id:'bombCol',w:50}
+    {id:'bombRow',w:75},
+    {id:'bombCol',w:75}
 ]
 var cellFont = fnts.at(0);
 
@@ -375,7 +375,9 @@ function drawGui(d) {
 function drawCells(d) {
     app.stage.getChildByLabel('cellTexts').removeChildren();
     graph
-      .clear()
+      .clear();
+
+    graph
       .roundRect(origX-borderWidth, origY-borderWidth, wg*unit+borderWidth*2, hg*unit+borderWidth*2, cornerRadius)
       .fill(0xffffff,.8)
       .roundRect(origX, origY, wg*unit, hg*unit, cornerRadius)
@@ -568,7 +570,7 @@ function hit(ball, cell, dmg) {
                     if (r!=cell.r) {
                         let cell0 = grid.at(r).at(cell.c);
                         if (cell0.power>0) {
-                            let atk = Math.min(cell0.power-1, Math.ceil(cell0.power*.6)+1);
+                            let atk = Math.min(cell0.power-1);
                             hit(null, cell0, atk);
                         }
                     }
@@ -579,7 +581,7 @@ function hit(ball, cell, dmg) {
                     if (c!=cell.c) {
                         let cell0 = grid.at(cell.r).at(c);
                         if (cell0.power>0) {
-                            let atk = Math.min(cell0.power-1, Math.ceil(cell0.power*.6)+1);
+                            let atk = Math.min(cell0.power-1);
                             hit(null, cell0, atk);
                         }
                     }
@@ -642,7 +644,7 @@ function ballCheck(ball) {
                 
                 if (col) {
                     hit(ball, cell, 1);
-                    drawGrid();
+                    //drawGrid();
 
                     distYbot = Math.abs(distYbot);
                     distYtop = Math.abs(distYtop);
