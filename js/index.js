@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v1.08: Optimization Update!';
+let version = 'v1.08.1: Optimization Update!';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -456,11 +456,13 @@ function drawCells(d) {
                         cellFlashCol=0xFF2255;
                         break;
                 }
-                text.alpha=1;
-                text.groupColor=cellTextCol;
-                text.text=cell.power;
-                text.x=origX+unit/2+unit*c;
-                text.y=origY+unit/2+unit*i;
+                if (text!=undefined) {
+                    text.alpha=1;
+                    text.groupColor=cellTextCol;
+                    text.text=cell.power;
+                    text.x=origX+unit/2+unit*c;
+                    text.y=origY+unit/2+unit*i;
+                }
 
                 graph
                   .rect(
@@ -501,8 +503,10 @@ function drawCells(d) {
                   .fill(cellFlashCol,cell.flash);
             }
             else {
-                text.alpha=1;
-                text.text='';
+                if (text!=undefined) {
+                    text.alpha=1;
+                    text.text='';
+                }
             }
             if (cell.flash>0) {
                 cell.flash=Math.max(0, cell.flash-d*2.6);
