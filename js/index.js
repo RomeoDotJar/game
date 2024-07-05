@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'version v1.06.4'
+let version = 'version v1.08: Optimization Update!';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -65,7 +65,7 @@ function updSizes() {
 
     midX = origX+unit*wg/2;
 
-    ballX = midX;
+    //ballX = midX;
     ballY = origY+unit*hg-unit*.5;
     
     ballR = unit/7;
@@ -80,8 +80,146 @@ let ball = PIXI.Sprite.from('img/ball.png');
 
 app.stage.addChild(ball);
 
+var scoreT;
+var versionT;
+
+var runT;
+var bestST;
+var lastST;
+
+var cellTs = [];
+
+function setupText() {
+    const vt0 = new PIXI.BitmapText({
+        text: version,
+        style: {
+            fontFamily: fnts.at(7),
+            fontSize: ftsz,
+            align: 'left',
+        }
+    });
+    vt0.tint=0x000000;
+    vt0.x=10+ftsz/16;
+    vt0.y=h(1)-ftsz+ftsz/16;
+    //app.stage.getChildByLabel('guiTexts').addChild(vt0);
+    const vt = new PIXI.BitmapText({
+        text: version,
+        style: {
+            fontFamily: fnts.at(7),
+            fontSize: ftsz,
+            align: 'left',
+        }
+    });
+    vt.x=10;
+    vt.y=h(1)-ftsz;
+
+    scoreT = [vt0, vt];
+    app.stage.getChildByLabel('guiTexts').addChild(vt0);
+    app.stage.getChildByLabel('guiTexts').addChild(vt);
+
+    let yOffset = Math.sin(scoreTick*.2+elapsed*2)*ftsz/11;
+    let xOffset = Math.cos(scoreTick*.2+elapsed)*ftsz/4;
+
+    let rOffset = Math.sin(scoreTick*.3+elapsed)/10;
+
+    const st0 = new PIXI.BitmapText({
+        text: 'счёт: '+Math.floor(score),
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    st0.tint=0x000000;
+    st0.x=midX+xOffset*1.2;
+    st0.y=origY-ftsz*1.2+ftsz/12+yOffset;
+    st0.rotation=rOffset;
+    st0.anchor.set(.5,.5);
+    const st = new PIXI.BitmapText({
+        text: 'счёт: '+Math.floor(score),
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    st.x=midX+xOffset;
+    st.y=origY-ftsz*1.2+yOffset;
+    st.rotation=rOffset;
+    st.anchor.set(.5,.5);
+
+    scoreT = [st0, st];
+    app.stage.getChildByLabel('guiTexts').addChild(st0);
+    app.stage.getChildByLabel('guiTexts').addChild(st);
+
+    const gt = new PIXI.BitmapText({
+        text: 'Run #'+attempts,
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz,
+            align: 'center',
+        }
+    });
+    gt.alpha=1;
+    gt.anchor.set(.5,.5);
+    gt.y=origY+unit*hg/2-ftsz*2;
+    gt.x=midX;
+    const lst = new PIXI.BitmapText({
+        text: 'last score: '+lastScore,
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz,
+            align: 'left',
+        }
+    });
+    lst.alpha=1;
+    lst.anchor.set(0,.5);
+    lst.y=origY+unit*hg/2;
+    lst.x=origX+unit;
+    const hst = new PIXI.BitmapText({
+        text: 'best score: '+hs,
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz,
+            align: 'left',
+        }
+    });
+    hst.alpha=1;
+    hst.anchor.set(0,.5);
+    hst.y=origY+unit*hg/2+ftsz*1.3;
+    hst.x=origX+unit;
+
+    bestST=hst;
+    lastST=lst;
+    runT=gt;
+    app.stage.getChildByLabel('guiTexts').addChild(gt);
+    app.stage.getChildByLabel('guiTexts').addChild(lst);
+    app.stage.getChildByLabel('guiTexts').addChild(hst);
+
+    for(let r=0;r<grid.length;r++){
+        let row = [];
+        for(let c=0;c<grid.at(r).length;c++){
+            let t = new PIXI.BitmapText({
+                text: '',
+                style: {
+                    fontFamily: cellFont,
+                    fontSize: ftsz,
+                    align: 'center',
+                }
+            });
+            t.alpha=0;
+            t.anchor.set(.5,.5);
+
+            row.push(t);
+            app.stage.getChildByLabel('cellTexts').addChild(t);
+        }
+        cellTs.push(row);
+    }
+}
+
 let elapsed = 0.0;
 
+let ballTick = 0.0;
 let ballsIn = 1;
 
 let gridW = Math.floor(Math.random()*5)+5;
@@ -89,22 +227,15 @@ let gridH = 10;
 
 let row = [];
 let grid = [];
-for (let i=0;i<gridW;i++) row.push({
-    power: 0,
-    type: 0
-});
-for (let i=0;i<gridH;i++) grid.push(row);
-
-if (Math.random()*100<1)
-    grid = [
-        [0,0,0,0,0],
-        [0,64,0,36,0],
-        [1,0,49,0,25],
-        [0,4,0,16,0],
-        [0,0,9,0,0],
-        [0,0,0,0,0],
-        [0,0,0,0,0]
-    ];
+for (let i=0;i<gridW;i++) {
+    row.push({
+        power: 0,
+        type: 0
+    });
+}
+for (let i=0;i<gridH;i++) {
+    grid.push(row);
+}
 
 let timerD=4;
 let timer=1;
@@ -116,63 +247,58 @@ let ballSpd = 12;
 let toBeLaunched = [0,0,0];
 let aimVector = [0,0];
 
-app.stage.eventMode = 'static'
-app.stage.ontouchstart = (event) => {
-    let y = event.y-origY-unit*hg+unit*.5;
+let md = false;
 
-    aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
-    if (y<0) {
-        aimVector[0]*=-1;
-    }
-}
-app.stage.ontouchmove = (event) => {
-    let y = event.y-origY-unit*hg+unit*.5;
+let pointerX=0;
+let pointerY=0;
 
-    aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
-    if (y<0) {
-        aimVector[0]*=-1;
-    }
-
-    //console.log(aimVector);
-}
-app.stage.ontouchend = (event) => {
+function launch() {
     if (ballsIn>0 && Math.abs(aimVector[0])+Math.abs(aimVector[1])>50) {
         toBeLaunched = [-aimVector[0],-aimVector[1],ballsIn];
         ballsIn=0;
     }
     aimVector = [0,0];
+}
+
+function aim() {
+    let y = pointerY-origY-unit*hg+unit*.5;
+
+    aimVector = [pointerX-ballX, Math.max(3, Math.abs(y))];
+    if (y<0) {
+        aimVector[0]*=-1;
+    }
+}
+
+app.stage.eventMode = 'static'
+app.stage.ontouchstart = (event) => {
+    md=true;
+    pointerX=event.x;
+    pointerY=event.y;
+}
+app.stage.ontouchmove = (event) => {
+    pointerX=event.x;
+    pointerY=event.y;
+}
+app.stage.ontouchend = (event) => {
+    md=false;
+    launch();
 }
 app.stage.ontouchcancel = (event) => {
     aimVector = [0,0];
+    md=false;
 }
-
-let md = false;
 app.stage.onmousedown = (event) => {
     md=true;
-    let y = event.y-origY-unit*hg+unit*.5;
-
-    aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
-    if (y<0) {
-        aimVector[0]*=-1;
-    }
+    pointerX=event.x;
+    pointerY=event.y;
 }
 app.stage.onmousemove = (event) => {
-    if (md) {
-        let y = event.y-origY-unit*hg+unit*.5;
-
-        aimVector = [event.x-midX, Math.max(3, Math.abs(y))];
-        if (y<0) {
-            aimVector[0]*=-1;
-        }
-    }
+    pointerX=event.x;
+    pointerY=event.y;
 }
 app.stage.onmouseup = (event) => {
     md=false;
-    if (ballsIn>0 && Math.abs(aimVector[0])+Math.abs(aimVector[1])>50) {
-        toBeLaunched = [-aimVector[0],-aimVector[1],ballsIn];
-        ballsIn=0;
-    }
-    aimVector = [0,0];
+    launch();
 }
 
 //const PIXI = require('pixi.js')
@@ -218,6 +344,7 @@ function initAll() {
     scoreTick=0;
     elapsed = 0.0;
 
+    ballTick = 0.0;
     ballsIn = 1;
 
     gridW = Math.floor(Math.random()*5)+5;
@@ -265,115 +392,37 @@ function initAll() {
 //const PIXI = require('pixi.js')
 
 function drawGui(d) {
-    app.stage.getChildByLabel('guiTexts').removeChildren();
-
     if (elapsed<timerD*3) {
         let a = Math.max(0, Math.min(1, 1.25-(elapsed/timerD/2)));
         a=Math.sqrt(a);
 
-        const gt = new PIXI.BitmapText({
-            text: 'Run #'+attempts,
-            style: {
-                fontFamily: fnts.at(1),
-                fontSize: ftsz,
-                align: 'center',
-            }
-        });
-        gt.alpha=a;
-        gt.anchor.set(.5,.5);
-        gt.y=origY+unit*hg/2-ftsz*2;
-        gt.x=midX;
-        app.stage.getChildByLabel('guiTexts').addChild(gt);
-        const lst = new PIXI.BitmapText({
-            text: 'last score: '+lastScore,
-            style: {
-                fontFamily: fnts.at(1),
-                fontSize: ftsz,
-                align: 'left',
-            }
-        });
-        lst.alpha=a;
-        lst.anchor.set(0,.5);
-        lst.y=origY+unit*hg/2;
-        lst.x=origX+unit;
-        app.stage.getChildByLabel('guiTexts').addChild(lst);
-        const hst = new PIXI.BitmapText({
-            text: 'best score: '+hs,
-            style: {
-                fontFamily: fnts.at(1),
-                fontSize: ftsz,
-                align: 'left',
-            }
-        });
-        hst.alpha=a;
-        hst.anchor.set(0,.5);
-        hst.y=origY+unit*hg/2+ftsz*1.3;
-        hst.x=origX+unit;
-        app.stage.getChildByLabel('guiTexts').addChild(hst);
+        runT.alpha=a;
+        bestST.alpha=a;
+        lastST.alpha=a;
     }
-
-    const vt0 = new PIXI.BitmapText({
-        text: version,
-        style: {
-            fontFamily: fnts.at(7),
-            fontSize: ftsz,
-            align: 'left',
-        }
-    });
-    vt0.tint=0x000000;
-    vt0.x=10+ftsz/16;
-    vt0.y=h(1)-ftsz+ftsz/16;
-    app.stage.getChildByLabel('guiTexts').addChild(vt0);
-    const vt = new PIXI.BitmapText({
-        text: version,
-        style: {
-            fontFamily: fnts.at(7),
-            fontSize: ftsz,
-            align: 'left',
-        }
-    });
-    vt.x=10;
-    vt.y=h(1)-ftsz;
-    app.stage.getChildByLabel('guiTexts').addChild(vt);
 
     let yOffset = Math.sin(scoreTick*.2+elapsed*2)*ftsz/11;
     let xOffset = Math.cos(scoreTick*.2+elapsed)*ftsz/4;
 
     let rOffset = Math.sin(scoreTick*.3+elapsed)/10;
 
-    const st0 = new PIXI.BitmapText({
-        text: 'счёт: '+Math.floor(score),
-        style: {
-            fontFamily: fnts.at(1),
-            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
-            align: 'center',
-        }
-    })
-    st0.tint=0x000000;
-    st0.x=ballX+xOffset*1.2;
-    st0.y=origY-ftsz*1.2+ftsz/12+yOffset;
-    st0.rotation=rOffset;
-    st0.anchor.set(.5,.5);
-    app.stage.getChildByLabel('guiTexts').addChild(st0);
-    const st = new PIXI.BitmapText({
-        text: 'счёт: '+Math.floor(score),
-        style: {
-            fontFamily: fnts.at(1),
-            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
-            align: 'center',
-        }
-    })
-    st.x=ballX+xOffset;
-    st.y=origY-ftsz*1.2+yOffset;
-    st.rotation=rOffset;
-    st.anchor.set(.5,.5);
-    app.stage.getChildByLabel('guiTexts').addChild(st);
+    scoreT[0].text='счёт: '+Math.floor(score)
+    scoreT[0].style.fontSize=ftsz*(1+Math.min(2,scoreTScale));
+    scoreT[0].x=midX+xOffset*1.2;
+    scoreT[0].y=origY-ftsz*1.2+ftsz/12+yOffset;
+    scoreT[0].rotation=rOffset;
+    
+    scoreT[1].text='счёт: '+Math.floor(score)
+    scoreT[1].style.fontSize=ftsz*(1+Math.min(2,scoreTScale));
+    scoreT[1].x=midX+xOffset;
+    scoreT[1].y=origY-ftsz*1.2+yOffset;
+    scoreT[1].rotation=rOffset;
+    scoreT[1].anchor.set(.5,.5);
 
-    scoreTScale/=1.08;
+    scoreTScale-=Math.min(1,scoreTScale*6*d);
 }
 
 function drawCells(d) {
-    app.stage.getChildByLabel('cellTexts').removeChildren();
     graph
       .clear();
 
@@ -386,11 +435,12 @@ function drawCells(d) {
     for (let i = 0; i<grid.length; i++) {
         for (let c = 0; c<grid.at(i).length; c++) {
             let cell = grid.at(i).at(c);
+            let text = cellTs[i][c];
 
             if (cell.power>0) {
                 let cellBorderCol=0xFFFFFF;
-                let cellTextCol=0xFFFFFF;
                 let cellFlashCol=0xFFFFFF;
+                let cellTextCol=0xFFFFFF;
                 let cellCol0=0x000000;
                 let cellCol1=0x000000;
 
@@ -406,6 +456,11 @@ function drawCells(d) {
                         cellFlashCol=0xFF2255;
                         break;
                 }
+                text.alpha=1;
+                text.groupColor=cellTextCol;
+                text.text=cell.power;
+                text.x=origX+unit/2+unit*c;
+                text.y=origY+unit/2+unit*i;
 
                 graph
                   .rect(
@@ -444,21 +499,10 @@ function drawCells(d) {
                   .rect(
                       origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i, unit-cellGap-cellBorderWidth*2, unit-cellGap-cellBorderWidth*2)
                   .fill(cellFlashCol,cell.flash);
-                
-                
-                const text = new PIXI.BitmapText({
-                    text: cell.power,
-                    style: {
-                        fontFamily: cellFont,
-                        fontSize: ftsz,
-                        align: 'center',
-                    }
-                })
-                text.groupColor=cellTextCol;
-                text.anchor.set(.5,.5);
-                text.x=origX+unit/2+unit*c;
-                text.y=origY+unit/2+unit*i;
-                app.stage.getChildByLabel('cellTexts').addChild(text);
+            }
+            else {
+                text.alpha=1;
+                text.text='';
             }
             if (cell.flash>0) {
                 cell.flash=Math.max(0, cell.flash-d*2.6);
@@ -468,7 +512,6 @@ function drawCells(d) {
 }
 
 function drawGrid() {
-
     ball.anchor.set(.5,.5);
     ball.y=h(.5);
     ball.x=w(.3);
@@ -559,7 +602,7 @@ function addScore(pts) {
 
 function hit(ball, cell, dmg) {
     cell.power-=dmg;
-    cell.flash=Math.min(1, cell.flash+dmg*.2);
+    cell.flash=Math.min(.7, cell.flash+dmg*.4);
     if (cell.power<=0) {
         switch (cell.type) {
             case 'basic':
@@ -570,7 +613,7 @@ function hit(ball, cell, dmg) {
                     if (r!=cell.r) {
                         let cell0 = grid.at(r).at(cell.c);
                         if (cell0.power>0) {
-                            let atk = Math.min(cell0.power-1);
+                            let atk = Math.min(cell0.power-(cell0.type=='basic'?1:0));
                             hit(null, cell0, atk);
                         }
                     }
@@ -581,7 +624,7 @@ function hit(ball, cell, dmg) {
                     if (c!=cell.c) {
                         let cell0 = grid.at(cell.r).at(c);
                         if (cell0.power>0) {
-                            let atk = Math.min(cell0.power-1);
+                            let atk = Math.min(cell0.power-(cell0.type=='basic'?1:0));
                             hit(null, cell0, atk);
                         }
                     }
@@ -589,7 +632,7 @@ function hit(ball, cell, dmg) {
                 break;
         }
     }
-    addScore(1);
+    addScore(dmg);
 }
 
 function ballCheck(ball) {
@@ -626,30 +669,45 @@ function ballCheck(ball) {
                 let distXright=ball.x-origX-unit*c-unit;
                 
                 let col = false;
-                let nodes = 1;
-                
-                for (let i=0;i<nodes;i++) {
-                    let distYbot0 = distYbot-(i/nodes)*ball.xV*ballSpd;
-                    let distYtop0 = distYtop-(i/nodes)*ball.xV*ballSpd;
-                    let distXleft0= distXleft-(i/nodes)*ball.yV*ballSpd;
-                    let distXright0=distXright-(i/nodes)*ball.yV*ballSpd;
+                let nodes = 3;
 
-                    if (distYbot0-ballR/2-cellBorderWidth<0 && distYtop0+ballR/2+cellBorderWidth>0) {
-                        if (distXleft0+ballR/2>0 && distXright0-ballR/2-cellBorderWidth<0) {
+                let distYbot0=0;
+                let distYtop0=0;
+                let distXleft0=0;
+                let distXright0=0;
+
+                let posX = ball.x;
+                let posY = ball.y;
+
+                for (let i = nodes; i>=0; i--) {
+
+                    posX = (ball.x*(nodes-i)+ball.x0*i)/nodes;
+                    posY = (ball.y*(nodes-i)+ball.y0*i)/nodes;
+
+                    distYbot0=distYbot-ball.y+posY;
+                    distYtop0=distYtop-ball.y+posY;
+                    distXleft0=distXleft-ball.x+posX;
+                    distXright0=distXright-ball.x+posX;
+
+                    if (distYbot0-ballR/2-cellBorderWidth*2<0 && distYtop0+ballR/2+cellBorderWidth*2>0) {
+                        if (distXleft0+ballR/2+cellBorderWidth*2>0 && distXright0-ballR/2-cellBorderWidth*2<0) {
                             col = true;
                             break;
                         }
                     }
                 }
+
+                ball.x = posX;
+                ball.y = posY;
                 
                 if (col) {
                     hit(ball, cell, 1);
                     //drawGrid();
 
-                    distYbot = Math.abs(distYbot);
-                    distYtop = Math.abs(distYtop);
-                    distXleft = Math.abs(distXleft);
-                    distXright = Math.abs(distXright);
+                    distYbot = Math.abs(distYbot0);
+                    distYtop = Math.abs(distYtop0);
+                    distXleft = Math.abs(distXleft0);
+                    distXright = Math.abs(distXright0);
                     
                     if (ball.yV>0)
                         distYbot=2^30;
@@ -668,28 +726,28 @@ function ballCheck(ball) {
                             if (r+1>=grid.length || grid.at(r+1).at(c).power<=0) {
                                 if (ball.yV<0)
                                     ball.yV*=-1;
-                                ball.y=origY+unit*r+unit+ballR/2+cellBorderWidth*2;
+                                ball.y=origY+unit*r+unit+ballR+cellBorderWidth*2;
                             }
                             break;
                         case distYtop:
                             if (r-1<0 || grid.at(r-1).at(c).power<=0) {
                                 if (ball.yV>0)
                                     ball.yV*=-1;
-                                ball.y=origY+unit*r-ballR/2-cellBorderWidth*2;
+                                ball.y=origY+unit*r-ballR-cellBorderWidth*2;
                             }
                             break;
                         case distXleft:
                             if (c-1<0 || grid.at(r).at(c-1).power<=0) {
                                 if (ball.xV>0)
                                     ball.xV*=-1;
-                                ball.x=origX+unit*c-ballR/2-cellBorderWidth*2;
+                                ball.x=origX+unit*c-ballR-cellBorderWidth*2;
                             }
                             break;
                         case distXright:
                             if (c+1>=grid.at(r).length || grid.at(r).at(c+1).power<=0) {
                                 if (ball.xV<0)
                                     ball.xV*=-1;
-                                ball.x=origX+unit*c+unit+ballR/2+cellBorderWidth*2;
+                                ball.x=origX+unit*c+unit+ballR+cellBorderWidth*2;
                             }
                             break;
                     }
@@ -714,17 +772,26 @@ function isEmpty() {
     return empty;
 }
 
+let ticks = 0;
 app.ticker.add((ticker) => {
     let d = ticker.deltaTime/60;
     elapsed += d;
     let difficulty=elapsed;
 
     if (true) {
+        ticks++;
         timer-=d;
     }
 
-    if (ballsOut.length>0) {
-        //console.log(ballsOut.at(0).xV+" "+ballsOut.at(0).yV)
+    if (md) aim();
+
+    if(!md && ballsOut<=0) {
+        
+    }
+
+    if (toBeLaunched.at(2)<=0 && ballsIn>0) {
+        ballTick+=d;
+        ballX = midX;//+Math.sin(ballTick)*unit*wg/3;
     }
 
     if (toBeLaunched.at(2)>0 && lastLaunchTime+cooldown<elapsed) {
@@ -738,7 +805,9 @@ app.ticker.add((ticker) => {
             x:ballX,
             y:ballY,
             xV:x/abs,
-            yV:y/abs
+            yV:y/abs,
+            x0:ballX,
+            y0:ballY
         });
 
         toBeLaunched[2]--;
@@ -753,6 +822,8 @@ app.ticker.add((ticker) => {
 
         let abs = 1;//Math.sqrt(ball.xV*ball.xV+ball.yV*ball.yV);
         let v = [ball.xV/abs, ball.yV/abs];
+        ball.x0=ball.x;
+        ball.y0=ball.y;
         ball.x+=v.at(0)*d*ballSpd;
         ball.y+=v.at(1)*d*ballSpd;
         
@@ -801,11 +872,19 @@ app.ticker.add((ticker) => {
                     let roll = Math.floor(Math.random()*maxW);
                     let margin = 0;
                     for (let i=0;i<cellTypes.length;i++) {
-                        margin+=cellTypes.at(i).w;
+                        let type = cellTypes.at(i);
+                        margin+=type.w;
                         if (roll<margin) {
-                            cell.type=cellTypes.at(i).id;
+                            cell.type=type.id;
                             break;
                         }
+                    }
+                    
+                    switch(cell.type) {
+                        case 'bombRow':
+                        case 'bombCol':
+                            cell.power=Math.ceil(cell.power/3);
+                            break;
                     }
                 }
                 r.push(cell);
@@ -818,6 +897,10 @@ app.ticker.add((ticker) => {
     drawCells(d);
     drawBalls(d);
     drawGui(d);
+    
+    if (ticks%60==0)
+        console.log(window.performance.memory);
 });
 
 initAll();
+setupText();
