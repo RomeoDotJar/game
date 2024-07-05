@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'v1.08.2: Optimization Update!';
+let version = 'v1.08.3';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -199,6 +199,7 @@ function setupText() {
     app.stage.getChildByLabel('guiTexts').addChild(lst);
     app.stage.getChildByLabel('guiTexts').addChild(hst);
 
+    cellTs=[];
     for(let r=0;r<grid.length;r++){
         let row = [];
         for(let c=0;c<grid.at(r).length;c++){
