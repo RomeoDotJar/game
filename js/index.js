@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'v1.08.1: Optimization Update!';
+let version = 'v1.08.2: Optimization Update!';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -90,6 +90,9 @@ var lastST;
 var cellTs = [];
 
 function setupText() {
+    app.stage.getChildByLabel('guiTexts').removeChildren();
+    app.stage.getChildByLabel('cellTexts').removeChildren();
+    
     const vt0 = new PIXI.BitmapText({
         text: version,
         style: {
@@ -386,6 +389,7 @@ function initAll() {
 
     cellFont = fnts.at(Math.floor(Math.random()*(fnts.length)));
 
+    setupText();
     drawGrid();
 }
 
@@ -907,4 +911,3 @@ app.ticker.add((ticker) => {
 });
 
 initAll();
-setupText();
