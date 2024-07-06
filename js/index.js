@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.12.1';
+const version = 'v1.12.2';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -815,10 +815,10 @@ function special(cell) {
                 if (cell.hitBy!=null) {
                     let ball = cell.hitBy;
                     let b = {
-                        x: ball.x,
-                        y: ball.y,
-                        xV:ball.xV*1.2,
-                        yV:ball.yV*1.2,
+                        x: ball.x2,
+                        y: ball.y2,
+                        xV:-ball.xV*1.2,
+                        yV:-ball.yV*1.2,
                         type:'generated'
                     };
                     ballsOut.push(b);
