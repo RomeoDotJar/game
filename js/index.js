@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-let version = 'v1.09';
+const version = 'v1.09.1';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -802,10 +802,10 @@ function ballCheck(ball) {
                     posX = (ball.x*(nodes-i)+ball.x0*i)/nodes;
                     posY = (ball.y*(nodes-i)+ball.y0*i)/nodes;
 
-                    if (posX+ballR>origX+unit*c &&
-                        posX-ballR<origX+unit*c+unit &&
-                        posY+ballR>origY+unit*r &&
-                        posY-ballR<origY+unit*r+unit                        
+                    if (posX+ballR+cellBorderWidth>origX+unit*c &&
+                        posX-ballR-cellBorderWidth<origX+unit*c+unit &&
+                        posY+ballR+cellBorderWidth>origY+unit*r &&
+                        posY-ballR-cellBorderWidth<origY+unit*r+unit                        
                     ) {
                         distYbot0=distYbot+posY;
                         distYtop0=distYtop+posY;
@@ -827,14 +827,14 @@ function ballCheck(ball) {
                     distXright = Math.abs(distXright0);
                     
                     if (ball.yV>0)
-                        distYbot=2^30;
+                        distYbot=h(1);
                     else
-                        distYtop=2^30;
+                        distYtop=h(1);
 
                     if (ball.xV>0)
-                        distXright=2^30;
+                        distXright=w(1);
                     else
-                        distXleft=2^30;
+                        distXleft=w(1);
                     
                     let max = Math.min(distYbot,distYtop,distXleft,distXright);
 
@@ -895,11 +895,9 @@ function isEmpty() {
 
 let ticks = 0;
 app.ticker.add((ticker) => {
-    let d = ticker.deltaTime/60;
+    let d = Math.min(1/30, ticker.deltaTime/60);
     elapsed += d;
     let difficulty=elapsed;
-
-    ticks++;
 
     if (md) aim();
 
