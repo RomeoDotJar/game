@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.09.1';
+const version = 'v1.09.2';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -827,14 +827,14 @@ function ballCheck(ball) {
                     distXright = Math.abs(distXright0);
                     
                     if (ball.yV>0)
-                        distYbot=h(1);
+                        distYbot*=50;
                     else
-                        distYtop=h(1);
+                        distYtop*=50;
 
                     if (ball.xV>0)
-                        distXright=w(1);
+                        distXright*=50;
                     else
-                        distXleft=w(1);
+                        distXleft*=50;
                     
                     let max = Math.min(distYbot,distYtop,distXleft,distXright);
 
