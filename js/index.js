@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.12';
+const version = 'v1.12.1';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -199,31 +199,6 @@ function setupText() {
     app.stage.getChildByLabel('guiTexts').addChild(vt0);
     app.stage.getChildByLabel('guiTexts').addChild(vt);
 
-    // score TEXT
-    const st0 = new PIXI.BitmapText({
-        text: 'счёт: '+Math.floor(score),
-        style: {
-            fontFamily: fnts.at(1),
-            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
-            align: 'center',
-        }
-    })
-    st0.tint=0x000000;
-    st0.anchor.set(.5,.5);
-    const st = new PIXI.BitmapText({
-        text: 'счёт: '+Math.floor(score),
-        style: {
-            fontFamily: fnts.at(1),
-            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
-            align: 'center',
-        }
-    })
-    st.anchor.set(.5,.5);
-
-    scoreT = [st0, st];
-    app.stage.getChildByLabel('guiTexts').addChild(st0);
-    app.stage.getChildByLabel('guiTexts').addChild(st);
-
     // rows to be added TEXT
     const rtat0 = new PIXI.BitmapText({
         text: '',
@@ -273,6 +248,33 @@ function setupText() {
     ballsInT = [bt0, bt];
     app.stage.getChildByLabel('guiTexts').addChild(bt0);
     app.stage.getChildByLabel('guiTexts').addChild(bt);
+
+    // score TEXT
+    const st0 = new PIXI.BitmapText({
+        text: 'счёт: '+Math.floor(score),
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    st0.tint=0x000000;
+    st0.anchor.set(.5,.5);
+    const st = new PIXI.BitmapText({
+        text: 'счёт: '+Math.floor(score),
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    st.anchor.set(.5,.5);
+
+    scoreT = [st0, st];
+    app.stage.getChildByLabel('guiTexts').addChild(st0);
+    app.stage.getChildByLabel('guiTexts').addChild(st);
+
+    // game start TEXT
 
     const gt = new PIXI.BitmapText({
         text: 'Забег №'+attempts,
