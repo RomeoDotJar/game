@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.09.2';
+const version = 'v1.10';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -897,7 +897,8 @@ let ticks = 0;
 app.ticker.add((ticker) => {
     let d = Math.min(1/30, ticker.deltaTime/60);
     elapsed += d;
-    let difficulty=elapsed;
+    // i*6+(1+i)*i/20
+    let difficulty=round*6+(round+1)*round/20;
 
     if (md) aim();
 
