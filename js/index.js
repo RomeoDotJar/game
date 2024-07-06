@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.11';
+const version = 'v1.12';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -125,7 +125,7 @@ function fillGrid() {
 }
 
 function fillCellTs() {
-    console.log(cellTs);
+    //console.log(cellTs);
     for(let r=0;r<gridH;r++){
         if (cellTs[r]==undefined)
             cellTs[r]=[];
@@ -675,7 +675,9 @@ function drawGrid() {
 
 let deltaX0=0;
 let deltaY0=0;
-let smoothing=3;
+let dist0=0;
+let smoothingTurn=.5;
+let smoothingDist=5;
 function drawBalls(d) {
     app.stage.getChildByLabel('balls').removeChildren();
 
@@ -710,7 +712,7 @@ function drawBalls(d) {
         graphBalls
           .fill(0x505050);
     }
-    console.log(ballsOut.length);
+    //console.log(ballsOut.length);
     for (let i=0;i<ballsOut.length;i++) {
         let ball = ballsOut.at(i);
         let x = ball.x;
@@ -729,12 +731,13 @@ function drawBalls(d) {
     }
 
     if (ballsIn>0 || toBeLaunched[2]>0) {
-        let deltaX = (deltaX0*smoothing+(-aimVector[0]*2.2))/(smoothing+1);
-        let deltaY = (deltaY0*smoothing+(-aimVector[1]*2.2))/(smoothing+1);
+        let deltaX = (deltaX0*smoothingTurn+(-aimVector[0]*2.2))/(smoothingTurn+1);
+        let deltaY = (deltaY0*smoothingTurn+(-aimVector[1]*2.2))/(smoothingTurn+1);
         deltaX0 = deltaX;
         deltaY0 = deltaY;
 
-        let dist = Math.sqrt(deltaX*deltaX+deltaY*deltaY);
+        let dist = (Math.sqrt(deltaX*deltaX+deltaY*deltaY)+dist0*smoothingDist)/(smoothingDist+1);
+        dist0=dist;
         
         let nodes=1+dist/30;
 
@@ -1118,8 +1121,8 @@ app.ticker.add((ticker) => {
     drawCells(d);
     drawGui(d);
     
-    if (ticks%60==0)
-        console.log(window.performance.memory);
+    //if (ticks%60==0)
+        //console.log(window.performance.memory);
 });
 
 initAll();
