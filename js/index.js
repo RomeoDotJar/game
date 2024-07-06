@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.10';
+const version = 'v1.11';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -25,8 +25,9 @@ const fnts = ['Arial','Verdana','Tahoma','Trebuchet MS','Times New Roman','Georg
 
 const cellTypes = [
     {id:'basic',w:1000},
-    {id:'bombRow',w:75},
-    {id:'bombCol',w:75}
+    {id:'bombRow',w:100},
+    {id:'bombCol',w:100},
+    {id:'ballsInc',w:250}
 ]
 var cellFont = fnts.at(0);
 
@@ -101,6 +102,7 @@ app.stage.addChild(ball);
 var scoreT;
 var versionT;
 var rowsToAddT;
+var ballsInT;
 
 var runT;
 var bestST;
@@ -157,7 +159,7 @@ function updateText() {
     versionT[1].y=h(1)-ftsz-10;
 
     runT.style.fontSize=ftsz;
-    runT.y=origY+unit*hg/2-ftsz*2;
+    runT.y=origY+unit*hg/2-ftsz*3;
     runT.x=midX;
 
     lastST.style.fontSize=ftsz;
@@ -165,7 +167,7 @@ function updateText() {
     lastST.x=origX+ftsz/2;
 
     bestST.style.fontSize=ftsz;
-    bestST.y=origY+unit*hg/2+ftsz*1.3;
+    bestST.y=origY+unit*hg/2+ftsz*2.5;
     bestST.x=origX+ftsz/2;
 }
 
@@ -224,7 +226,7 @@ function setupText() {
 
     // rows to be added TEXT
     const rtat0 = new PIXI.BitmapText({
-        text: 'счёт: '+Math.floor(score),
+        text: '',
         style: {
             fontFamily: fnts.at(1),
             fontSize: ftsz*(1+Math.min(2,scoreTScale)),
@@ -234,7 +236,7 @@ function setupText() {
     rtat0.tint=0x000000;
     rtat0.anchor.set(.5,.5);
     const rtat = new PIXI.BitmapText({
-        text: 'счёт: '+Math.floor(score),
+        text: '',
         style: {
             fontFamily: fnts.at(1),
             fontSize: ftsz*(1+Math.min(2,scoreTScale)),
@@ -247,6 +249,31 @@ function setupText() {
     app.stage.getChildByLabel('guiTexts').addChild(rtat0);
     app.stage.getChildByLabel('guiTexts').addChild(rtat);
 
+    // balls TEXT
+    const bt0 = new PIXI.BitmapText({
+        text: '',
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    bt0.tint=0x000000;
+    bt0.anchor.set(.5,.5);
+    const bt = new PIXI.BitmapText({
+        text: '',
+        style: {
+            fontFamily: fnts.at(1),
+            fontSize: ftsz*(1+Math.min(2,scoreTScale)),
+            align: 'center',
+        }
+    })
+    bt.anchor.set(.5,.5);
+
+    ballsInT = [bt0, bt];
+    app.stage.getChildByLabel('guiTexts').addChild(bt0);
+    app.stage.getChildByLabel('guiTexts').addChild(bt);
+
     const gt = new PIXI.BitmapText({
         text: 'Забег №'+attempts,
         style: {
@@ -257,7 +284,7 @@ function setupText() {
     });
     gt.anchor.set(.5,.5);
     const lst = new PIXI.BitmapText({
-        text: 'прошлая игра: '+lastScore,
+        text: 'прошлая игра:\n  '+lastScore,
         style: {
             fontFamily: fnts.at(1),
             fontSize: ftsz,
@@ -266,7 +293,7 @@ function setupText() {
     });
     lst.anchor.set(0,.5);
     const hst = new PIXI.BitmapText({
-        text: 'личный рекорд: '+hs,
+        text: 'личный рекорд:\n  '+hs,
         style: {
             fontFamily: fnts.at(1),
             fontSize: ftsz,
@@ -505,6 +532,28 @@ function drawGui(d) {
     rowsToAddT[1].x=origX+unit*wg-unit/4+xOffset;
     rowsToAddT[1].y=origY-ftsz*1.7+yOffset;
     rowsToAddT[1].rotation=rOffset;
+
+    // RTA text
+
+    let balls = ballsIn+toBeLaunched[2];
+
+    yOffset = Math.cos(balls*.4+elapsed*1.2)*ftsz/20;
+    xOffset = Math.sin(balls*.4+elapsed*1.5)*ftsz/8+ftsz*.1;
+
+    rOffset = Math.cos(balls*3+ballsOut.length+elapsed*2)/20+.1;
+
+    ballsInT[0].text='шары:\n'+balls;
+    ballsInT[0].style.fontSize=ftsz*.9;
+    ballsInT[0].groupColor=new PIXI.Color({r:0,g:0,b:0}).toBgrNumber();
+    ballsInT[0].x=origX+unit/3+xOffset*1.2;
+    ballsInT[0].y=origY-ftsz*1.7+ftsz/13.7+yOffset;
+    ballsInT[0].rotation=rOffset;
+ballsIn 
+    ballsInT[1].text='шары:\n'+balls;
+    ballsInT[1].style.fontSize=ftsz*.9;
+    ballsInT[1].x=origX+unit/3+xOffset;
+    ballsInT[1].y=origY-ftsz*1.7+yOffset;
+    ballsInT[1].rotation=rOffset;
 }
 
 //const PIXI = require('pixi.js');
@@ -540,6 +589,11 @@ function drawCells(d) {
                     cellCol0=0x000011;
                     cellCol1=0xAA2255;
                     cellFlashCol=0xFF2255;
+                    break;
+                case 'ballsInc':
+                    cellCol0=0x4466FF;
+                    cellCol1=0x000011;
+                    cellFlashCol=0x2255FF;
                     break;
             }
 
@@ -577,6 +631,11 @@ function drawCells(d) {
                           .fill(cellCol1);
                         // horizontal line with col1
                         break;
+                    case 'ballsInc':
+                        graph
+                          .circle(
+                            origX+cellBorderWidth+cellGap/2+unit*c+unit*.5, origY+cellBorderWidth+cellGap/2+unit*i+unit*.5, unit/2.5)
+                          .fill(cellCol1);
                     default:
                         graph
                           .poly([
@@ -640,8 +699,6 @@ function drawBalls(d) {
         
         let graphicsLevel = 8-ballsOut.length/100;
 
-        
-
         if (graphicsLevel>0) graphBalls.circle((x+x0)/2,(y+y0)/2,ballR);
         if (graphicsLevel>1) graphBalls.circle(x0,y0,ballR*.95);
         if (graphicsLevel>2) graphBalls.circle((x1+x0)/2,(y1+y0)/2,ballR*.85);
@@ -653,14 +710,22 @@ function drawBalls(d) {
         graphBalls
           .fill(0x505050);
     }
+    console.log(ballsOut.length);
     for (let i=0;i<ballsOut.length;i++) {
         let ball = ballsOut.at(i);
         let x = ball.x;
         let y = ball.y;
+
+        var col = 0xFFFFFF;
+        switch (ball.type) {
+            case 'generated':
+                col=0x3333FF;
+                break;
+        }
         
         graphBalls
           .circle(x, y, ballR)
-          .fill(0xFFFFFF);
+          .fill(col);
     }
 
     if (ballsIn>0 || toBeLaunched[2]>0) {
@@ -726,7 +791,7 @@ function special(cell) {
                     let cell0 = grid.at(r).at(cell.c);
                     let debuff = (cell0.power>0?(cell0.type.includes('bomb')?0:(cell0.power>1?1:0)):-100);
                     let atk = Math.min(cell0.power-debuff);
-                    hit(undefined, cell0, atk);
+                    hit(cell.hitBy, cell0, atk);
                 }
             }
             break;
@@ -736,7 +801,22 @@ function special(cell) {
                     let cell0 = grid.at(cell.r).at(c);
                     let debuff = (cell0.power>0?(cell0.type.includes('bomb')?0:(cell0.power>1?1:0)):-100);
                     let atk = Math.max(0, Math.min(cell0.power-debuff));
-                    hit(undefined, cell0, atk);
+                    hit(cell.hitBy, cell0, atk);
+                }
+            }
+            break;
+        case 'ballsInc':
+            for (let i=0; i<1; i++) {
+                if (cell.hitBy!=null) {
+                    let ball = cell.hitBy;
+                    let b = {
+                        x: ball.x,
+                        y: ball.y,
+                        xV:ball.xV*1.2,
+                        yV:ball.yV*1.2,
+                        type:'generated'
+                    };
+                    ballsOut.push(b);
                 }
             }
             break;
@@ -919,10 +999,7 @@ app.ticker.add((ticker) => {
             y:ballY,
             xV:x/abs,
             yV:y/abs,
-            x0:ballX,
-            y0:ballY,
-            x1:ballX,
-            y1:ballY
+            type:''
         });
 
         toBeLaunched[2]--;
@@ -1024,6 +1101,9 @@ app.ticker.add((ticker) => {
                         case 'bombRow':
                         case 'bombCol':
                             cell.power=Math.ceil(cell.power/3);
+                            break;
+                        case 'ballsInc':
+                            cell.power=Math.ceil(round/20);
                             break;
                     }
                 }
