@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.13.1';
+const version = 'v1.13.3';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -25,14 +25,14 @@ const fnts = ['Arial','Verdana','Tahoma','Trebuchet MS','Times New Roman','Georg
 
 const cellTypes = [
     {id:'basic',w:1000},
-    {id:'bombRow',w:180},
-    {id:'bombCol',w:180},
-    {id:'mystery',w:130},
-    {id:'damageBoost',w:150}
+    {id:'bombRow',w:150},
+    {id:'bombCol',w:150},
+    {id:'mystery',w:90},
+    {id:'damageBoost',w:140}
 ]
 const specialTypes = [
-    {id:'damageInc',freq:12},
-    {id:'ballsInc+',freq:6},
+    {id:'damageInc',freq:15},
+    {id:'ballsInc+',freq:10},
     {id:'ballsInc',freq:3}
 ]
 var cellFont = fnts.at(0);
@@ -509,10 +509,10 @@ function drawGui(d) {
     let rOffset;
 
     // score text
-    yOffset = Math.sin(scoreTick*.2+elapsed*2)*ftsz/11;
-    xOffset = Math.cos(scoreTick*.2+elapsed)*ftsz/4;
+    yOffset = Math.sin(scoreTick*.08+elapsed*2)*ftsz/11;
+    xOffset = Math.cos(scoreTick*.08+elapsed)*ftsz/4;
 
-    rOffset = Math.sin(scoreTick*.3+elapsed)/10;
+    rOffset = Math.sin(scoreTick*.12+elapsed)/10;
 
     scoreT[0].text='счёт: '+Math.floor(score)
     scoreT[0].style.fontSize=ftsz*.95*(1+Math.min(2,scoreTScale));
@@ -639,10 +639,10 @@ function drawCells(d) {
                             text.text='?';
                             break;
                         default:
-                            text.text=cell.power;
+                            text.text=Math.ceil(cell.power);
                     }
                     if (text.style!=undefined)
-                        text.style.fontSize=ftszcell;
+                        text.style.fontSize=ftszcell-Math.ceil(cell.power).toString().length*3;
                     text.x=origX+unit/2+unit*c;
                     text.y=origY+unit/2+unit*i;
                 }
@@ -852,7 +852,7 @@ app.renderer.on('resize', (width, height) => {
 function addScore(pts) {
     score+=pts;
     scoreTick+=pts;
-    scoreTScale+=.05*Math.min(pts, 5);
+    scoreTScale+=.02*Math.min(pts, 5);
 }
 
 function special(cell) {
@@ -913,7 +913,7 @@ function special(cell) {
                 }
                 break;
             case 'damageInc':
-                ballDmg++;
+                ballDmg+=.5;
     }
 }
 
@@ -1077,7 +1077,7 @@ app.ticker.add((ticker) => {
     let d = Math.min(1/30, ticker.deltaTime/60);
     elapsed += d;
     // i*6+(1+i)*i/20
-    let difficulty=round*6+(round+1)*round/20;
+    let difficulty=Math.max(1, round*6-4)+(round+1)*round/18;
 
     if (md) aim();
 
