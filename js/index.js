@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.12.2';
+const version = 'v1.13.1';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -25,11 +25,28 @@ const fnts = ['Arial','Verdana','Tahoma','Trebuchet MS','Times New Roman','Georg
 
 const cellTypes = [
     {id:'basic',w:1000},
-    {id:'bombRow',w:100},
-    {id:'bombCol',w:100},
-    {id:'ballsInc',w:250}
+    {id:'bombRow',w:180},
+    {id:'bombCol',w:180},
+    {id:'mystery',w:130},
+    {id:'damageBoost',w:150}
+]
+const specialTypes = [
+    {id:'damageInc',freq:12},
+    {id:'ballsInc+',freq:6},
+    {id:'ballsInc',freq:3}
 ]
 var cellFont = fnts.at(0);
+
+function getEmptyBall(xV,yV) {
+    return {
+        x:ballX,
+        y:ballY,
+        xV:xV,
+        yV:yV,
+        type:'',
+        dmg:ballDmg
+    };
+}
 
 function getEmptyCell(r,c) {
     return {
@@ -42,6 +59,34 @@ function getEmptyCell(r,c) {
         hitBy:undefined
     }
 }
+
+let elapsed = 0.0;
+
+let ballTick = 0.0;
+let ballsIn = 1;
+
+let gridW = Math.floor(Math.random()*5)+5;
+let gridH = Math.floor(Math.random()*4)+8;
+
+let row = [];
+let grid = [];
+
+let rowsToAdd=0;
+let ballsOut = [];// {}
+
+let ballR = 10;
+
+var ballSpdB;
+var ballSpd;
+var ballDmg;
+
+let toBeLaunched = [0,0,0];
+let aimVector = [0,0];
+
+let md = false;
+
+let pointerX=0;
+let pointerY=0;
 
 var attempts = 0;
 var hs = 0;
@@ -64,8 +109,6 @@ var ballY = 0;
 
 var ftsz=0;
 var ftszcell=0;
-
-var ballSpdB;
 
 function updSizes() {
     wg = grid.at(0).length;
@@ -317,31 +360,6 @@ function setupText() {
     updateText();
 }
 
-let elapsed = 0.0;
-
-let ballTick = 0.0;
-let ballsIn = 1;
-
-let gridW = Math.floor(Math.random()*5)+5;
-let gridH = Math.floor(Math.random()*4)+8;
-
-let row = [];
-let grid = [];
-
-let rowsToAdd=0;
-let ballsOut = [];// {}
-
-let ballR = 10;
-let ballSpd;
-
-let toBeLaunched = [0,0,0];
-let aimVector = [0,0];
-
-let md = false;
-
-let pointerX=0;
-let pointerY=0;
-
 function launch() {
     if (ballsIn>0 && Math.abs(aimVector[0])+Math.abs(aimVector[1])>50 && toBeLaunched[2]<=0) {
         toBeLaunched = [-aimVector[0],-aimVector[1],ballsIn];
@@ -419,6 +437,8 @@ ballsC.label='balls';
 app.stage.addChild(ballsC);
 
 var lastLaunchTime = 0;
+var lastRoundTime = 0;
+var lastHitTime = 0;
 var cooldown;
 
 var maxDist = 300;
@@ -452,11 +472,14 @@ function initAll() {
     ballsOut = [];// {}
 
     ballSpdB=13;
+    ballDmg = 1;
 
     toBeLaunched = [0,0,0];
     aimVector = [0,0];
     
     lastLaunchTime = 0;
+    lastRoundTime = 0;
+    lastHitTime = 0;
     cooldown = 0.1;//0.1;
 
     maxDist = 300;
@@ -537,21 +560,21 @@ function drawGui(d) {
 
     // RTA text
 
-    let balls = ballsIn+toBeLaunched[2];
+    let balls = ballsIn+toBeLaunched[2]+ballsOut.length;;
 
     yOffset = Math.cos(balls*.4+elapsed*1.2)*ftsz/20;
     xOffset = Math.sin(balls*.4+elapsed*1.5)*ftsz/8+ftsz*.1;
 
-    rOffset = Math.cos(balls*3+ballsOut.length+elapsed*2)/20+.1;
+    rOffset = Math.cos(balls*3+ballsOut.length*.2+elapsed*2)/20+.1;
 
-    ballsInT[0].text='шары:\n'+balls;
+    ballsInT[0].text='шары:\n'+balls+' x'+ballDmg;
     ballsInT[0].style.fontSize=ftsz*.9;
     ballsInT[0].groupColor=new PIXI.Color({r:0,g:0,b:0}).toBgrNumber();
     ballsInT[0].x=origX+unit/3+xOffset*1.2;
     ballsInT[0].y=origY-ftsz*1.7+ftsz/13.7+yOffset;
     ballsInT[0].rotation=rOffset;
 ballsIn 
-    ballsInT[1].text='шары:\n'+balls;
+    ballsInT[1].text='шары:\n'+balls+' x'+ballDmg;
     ballsInT[1].style.fontSize=ftsz*.9;
     ballsInT[1].x=origX+unit/3+xOffset;
     ballsInT[1].y=origY-ftsz*1.7+yOffset;
@@ -583,6 +606,7 @@ function drawCells(d) {
 
             switch (cell.type) {
                 case 'basic':
+                case 'mystery':
                     cellCol0=0x000011;
                     cellCol1=0x131320;
                     break;
@@ -592,10 +616,17 @@ function drawCells(d) {
                     cellCol1=0xAA2255;
                     cellFlashCol=0xFF2255;
                     break;
+                case 'damageBoost':
+                    cellCol0=0x000011;
+                    cellCol1=0x4499FF;
+                    cellFlashCol=0x22FFFF;
+                    break;
                 case 'ballsInc':
-                    cellCol0=0x4466FF;
-                    cellCol1=0x000011;
-                    cellFlashCol=0x2255FF;
+                case 'ballsInc+':
+                case 'damageInc':
+                    cellCol0=0x44DD55;
+                    cellCol1=0x001100;
+                    cellFlashCol=0x22FF55;
                     break;
             }
 
@@ -603,7 +634,13 @@ function drawCells(d) {
                 if (text!=undefined) {
                     text.alpha=1;
                     text.groupColor=cellTextCol;
-                    text.text=cell.power;
+                    switch (cell.type) {
+                        case 'mystery':
+                            text.text='?';
+                            break;
+                        default:
+                            text.text=cell.power;
+                    }
                     if (text.style!=undefined)
                         text.style.fontSize=ftszcell;
                     text.x=origX+unit/2+unit*c;
@@ -633,11 +670,41 @@ function drawCells(d) {
                           .fill(cellCol1);
                         // horizontal line with col1
                         break;
+                    case 'damageBoost':
+                        graph
+                          .poly([
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit/2-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i)
+                            ])
+                          .fill(cellCol1);
+                        break;
+                    case 'damageInc':
+                        graph
+                          .poly([
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit/2-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i)
+                            ])
+                          .fill(cellCol1);
+                        break;
+                    case 'ballsInc+':
+                        graph
+                          .circle(
+                            origX+cellBorderWidth+cellGap/2+unit*c+unit*.5, origY+cellBorderWidth+cellGap/2+unit*i+unit*.5, unit/2.5)
+                          .fill(cellCol1,.9)
+                          .poly([
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i),
+                            new PIXI.Point(origX+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*c, origY+cellBorderWidth+cellGap/2+unit-cellGap-cellBorderWidth*2+unit*i)
+                            ])
+                          .fill(cellCol1,.3);
+                        break;
                     case 'ballsInc':
                         graph
                           .circle(
                             origX+cellBorderWidth+cellGap/2+unit*c+unit*.5, origY+cellBorderWidth+cellGap/2+unit*i+unit*.5, unit/2.5)
-                          .fill(cellCol1);
+                          .fill(cellCol1,.98);
                     default:
                         graph
                           .poly([
@@ -723,7 +790,10 @@ function drawBalls(d) {
         var col = 0xFFFFFF;
         switch (ball.type) {
             case 'generated':
-                col=0x3333FF;
+                col=0x33FF33;
+                break;
+            case 'boosted':
+                col=0x33FFFF;
                 break;
         }
         
@@ -762,7 +832,7 @@ function drawBalls(d) {
               .fill(0xFFFFFF, Math.max(0, 1-dist0/usedDist));
         }
         graphBalls
-          .circle(ballX, ballY, ballR+Math.min(13,(ballsIn+toBeLaunched[2])/10))
+          .circle(ballX, ballY, ballR+Math.min(8,(ballsIn+toBeLaunched[2])/15))
           .fill(0xFFFFFF);
     }
 }
@@ -787,8 +857,16 @@ function addScore(pts) {
 
 function special(cell) {
     switch (cell.type) {
+        case 'mystery':
+            addScore(1);
         case 'basic':
             addScore(1);
+            break;
+        case 'damageBoost':
+            for (let i=0;i<ballsOut.length;i++) {
+                ballsOut[i].dmg*=2;
+                ballsOut[i].type='boosted';
+            }
             break;
         case 'bombCol':
             for (let r=0;r<grid.length;r++) {
@@ -810,21 +888,32 @@ function special(cell) {
                 }
             }
             break;
-        case 'ballsInc':
-            for (let i=0; i<1; i++) {
-                if (cell.hitBy!=null) {
-                    let ball = cell.hitBy;
-                    let b = {
-                        x: ball.x2,
-                        y: ball.y2,
-                        xV:-ball.xV*1.2,
-                        yV:-ball.yV*1.2,
-                        type:'generated'
-                    };
-                    ballsOut.push(b);
+            case 'ballsInc':
+                for (let i=0; i<1; i++) {
+                    if (cell.hitBy!=null && cell.hitBy!=undefined) {
+                        let ball = cell.hitBy;
+                        let b = getEmptyBall(-ball.xV*1.2,-ball.yV*1.2);
+                        b.x=ball.x;
+                        b.y=ball.y;
+                        b.type = 'generated';
+                        ballsOut.push(b);
+                    }
                 }
-            }
-            break;
+                break;
+            case 'ballsInc+':
+                for (let i=0; i<Math.ceil(round/10)*2; i++) {
+                    if (cell.hitBy!=null && cell.hitBy!=undefined) {
+                        let ball = cell.hitBy;
+                        let b = getEmptyBall(-ball.xV*1.2,-ball.yV*1.2);
+                        b.x=ball.x+(Math.random()-.5)*i;
+                        b.y=ball.y+(Math.random()-.5)*i;
+                        b.type = 'generated';
+                        ballsOut.push(b);
+                    }
+                }
+                break;
+            case 'damageInc':
+                ballDmg++;
     }
 }
 
@@ -834,6 +923,10 @@ function hit(ball, cell, dmg) {
     cell.power=Math.max(0, cell.power-dmg);
     cell.flash=Math.min(.7, cell.flash+dmg*.3+.1);
     addScore(Math.max(0,power0-cell.power));
+
+    if (cell.type!='' && ball!=undefined && ball!=null) {
+        ;
+    }
 }
 
 function ballCheck(ball) {
@@ -903,7 +996,8 @@ function ballCheck(ball) {
                 }
                 
                 if (col) {
-                    hit(ball, cell, 1);
+                    hit(ball, cell, ball.dmg);
+                    lastHitTime=elapsed;
                     //drawGrid();
 
                     distYbot = Math.abs(distYbot0);
@@ -911,12 +1005,12 @@ function ballCheck(ball) {
                     distXleft = Math.abs(distXleft0);
                     distXright = Math.abs(distXright0);
                     
-                    if (ball.yV>0)
+                    if (ball.yV>0 || (r+1<grid.length && grid.at(r+1).at(c).power>0))
                         distYbot*=50;
                     else
                         distYtop*=50;
 
-                    if (ball.xV>0)
+                    if (ball.xV>0 || (c+1<grid.at(r).length && grid.at(r).at(c+1).power>0))
                         distXright*=50;
                     else
                         distXleft*=50;
@@ -925,7 +1019,7 @@ function ballCheck(ball) {
 
                     switch(max) {
                         case distYbot:
-                            if (r+1>=grid.length || grid.at(r+1).at(c).power<=0) {
+                            if (true) {
                                 ball.y=posY;
                                 if (ball.yV<0)
                                     ball.yV*=-1;
@@ -933,7 +1027,7 @@ function ballCheck(ball) {
                             }
                             break;
                         case distYtop:
-                            if (r-1<0 || grid.at(r-1).at(c).power<=0) {
+                            if (true) {
                                 ball.y=posY;
                                 if (ball.yV>0)
                                     ball.yV*=-1;
@@ -941,7 +1035,7 @@ function ballCheck(ball) {
                             }
                             break;
                         case distXleft:
-                            if (c-1<0 || grid.at(r).at(c-1).power<=0) {
+                            if (true) {
                                 ball.x=posX;
                                 if (ball.xV>0)
                                     ball.xV*=-1;
@@ -949,7 +1043,7 @@ function ballCheck(ball) {
                             }
                             break;
                         case distXright:
-                            if (c+1>=grid.at(r).length || grid.at(r).at(c+1).power<=0) {
+                            if (true) {
                                 ball.x=posX;
                                 if (ball.xV<0)
                                     ball.xV*=-1;
@@ -999,13 +1093,7 @@ app.ticker.add((ticker) => {
         let y = toBeLaunched.at(1);
 
         let abs = Math.sqrt(x*x+y*y);
-        ballsOut.push({
-            x:ballX,
-            y:ballY,
-            xV:x/abs,
-            yV:y/abs,
-            type:''
-        });
+        ballsOut.push(getEmptyBall(x/abs,y/abs));
 
         toBeLaunched[2]--;
         lastLaunchTime=elapsed;
@@ -1048,7 +1136,7 @@ app.ticker.add((ticker) => {
         }
     }
 
-    if (rowsToAdd>0 && ballsOut.length<=0) {
+    if (rowsToAdd>0 && (ballsOut.length<=0 || (elapsed-lastLaunchTime>1 && elapsed-lastHitTime>30))) {
         let lastRow = grid.at(-2);
         if (lastRow!=undefined) {
             for (let i=0;i<lastRow.length;i++) {
@@ -1061,7 +1149,8 @@ app.ticker.add((ticker) => {
 
         rowsToAdd--;
         round++;
-        if ((round+10)%15==0) {
+        lastRoundTime=elapsed;
+        if ((round+10)%20==0) {
             gridW=Math.min(gridW+1, 16);
             gridH=Math.min(gridH+1, 18);
             fillGrid();
@@ -1070,7 +1159,7 @@ app.ticker.add((ticker) => {
 
         addScore(Math.floor(Math.sqrt(round)));
 
-        ballsIn+=1;
+        //ballsIn+=round%2;
 
         do {
             for (let r=grid.length-1; r>0;r--) {
@@ -1079,13 +1168,25 @@ app.ticker.add((ticker) => {
                     if (grid.at(r).at(c)!=undefined)
                         grid.at(r).at(c).r+=1;
             }
+
+            let chosenC = -1;
+            let chosenType;
+            for (let i=0;i<specialTypes.length;i++) {
+                let type = specialTypes.at(i);
+                if (round%type.freq==0) {
+                    chosenC = Math.floor(Math.random()*grid.at(0).length);
+                    chosenType = type;
+                    break;
+                }
+            }
             let r = [];
             for(let c=0;c<grid.at(0).length;c++) {
                 let cell = getEmptyCell(0,c);
                 cell.c = c;
                 cell.r = 0;
                 cell.dead = false;
-                if (Math.floor(Math.random()*(4+difficulty/90)-2)>0) {
+
+                if (c!=chosenC && Math.floor(Math.random()*(4+difficulty/90)-2)>0) {
                     cell.power = Math.ceil(Math.random()*(difficulty/10+1)+difficulty/5);
 
                     let maxW = 0;
@@ -1101,16 +1202,22 @@ app.ticker.add((ticker) => {
                             break;
                         }
                     }
+                }
+                else if (chosenC==c) {
+                    cell.type=chosenType.id;
+                }
                     
-                    switch(cell.type) {
-                        case 'bombRow':
-                        case 'bombCol':
-                            cell.power=Math.ceil(cell.power/3);
-                            break;
-                        case 'ballsInc':
-                            cell.power=Math.ceil(round/20);
-                            break;
-                    }
+                switch(cell.type) {
+                    case 'damageBoost':
+                    case 'bombRow':
+                    case 'bombCol':
+                        cell.power=Math.ceil(cell.power/3);
+                        break;
+                    case 'ballsInc':
+                    case 'ballsInc+':
+                    case 'damageInc':
+                        cell.power=Math.ceil(round/20);
+                        break;
                 }
                 r.push(cell);
             }
