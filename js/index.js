@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.13.4';
+const version = 'v1.13.5';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -77,6 +77,8 @@ let ballsOut = [];// {}
 let ballR = 10;
 
 var ballSpdB;
+var ballSpdBFast;
+var ballSpdBNormal;
 var ballSpd;
 var ballDmg;
 
@@ -127,7 +129,7 @@ function updSizes() {
     
     ballR = unit/7;
 
-    ballSpd = ballSpdB*unit;
+    //ballSpd = ballSpdB*unit;
 
     ftsz = Math.min(w(1)/13,h(1)/27);
 
@@ -472,6 +474,8 @@ function initAll() {
     ballsOut = [];// {}
 
     ballSpdB=13;
+    ballSpdBFast=ballSpdB*3;
+    ballSpdBNormal=ballSpdB;
     ballDmg = 1;
 
     toBeLaunched = [0,0,0];
@@ -1229,6 +1233,10 @@ app.ticker.add((ticker) => {
     drawBalls(d);
     drawCells(d);
     drawGui(d);
+
+    if (elapsed-lastHitTime>5 && elapsed-lastLaunchTime>7 && ballsOut.length>0) ballSpdB=ballSpdBFast;
+    else ballSpdB=ballSpdBNormal;
+    ballSpd=ballSpdB*unit;
     
     //if (ticks%60==0)
         //console.log(window.performance.memory);
