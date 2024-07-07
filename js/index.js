@@ -1,6 +1,6 @@
 //const PIXI = require('pixi.js')
 
-const version = 'v1.13.3';
+const version = 'v1.13.4';
 console.log(version);
 
 const app = new PIXI.Application()
@@ -480,7 +480,7 @@ function initAll() {
     lastLaunchTime = 0;
     lastRoundTime = 0;
     lastHitTime = 0;
-    cooldown = 0.1;//0.1;
+    cooldown = 0.07;//0.1;
 
     maxDist = 300;
 
